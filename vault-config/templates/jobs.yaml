@@ -1,0 +1,73 @@
+{{- $release := .Release -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-{{ randAlphaNum 5 | lower }}
+spec:
+  template:
+    spec:
+      {{- if .Values.rbac.create }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+      {{- range .Values.imagePullSecrets }}
+      {{- if typeIs "string" . }}
+        - name: {{ . }}
+      {{- else if index . "name" }}
+        - name: {{ .name }}
+      {{- end }}
+      {{- end }}
+      {{- end }}
+      containers:
+        - name: operator
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /bin/bash
+            - -c
+            - |
+              bash /Scripts/init-script.sh
+              bash /Scripts/dynamodb.sh
+              bash /Scripts/secret_engines.sh
+              bash /Scripts/acls.sh
+              bash -x /Scripts/auth.sh 
+          env:
+            - name: VAULT_POD_SELECTOR
+              value: "{{ .Values.vaultPodSelector }}"
+          {{- if .Values.extraSecretEnvironmentVars }}
+          {{ .Values.extraSecretEnvironmentVars | toYaml | nindent 12 }}
+          {{- end }}
+          envFrom:
+            - secretRef:
+                name: {{ .Release.Name }}-env
+            - configMapRef:
+                name: {{ .Release.Name }}-env
+          volumeMounts:
+            - name: vault-scripts
+              mountPath: /Scripts
+            - name: vault-acls
+              mountPath: /ACLs
+            - name: vault-secret-engines
+              mountPath: /SecretEngines
+            {{- range $authmethod, $userData := .Values.authmethods }}
+            - name: {{ $authmethod }}
+              mountPath: "/AuthMethods/{{ $authmethod }}"
+            {{- end }}
+      restartPolicy: Never
+      volumes: 
+        - name: vault-scripts
+          configMap:
+            name: {{ .Release.Name }}-scripts
+        - name: vault-acls
+          configMap:
+            name: {{ .Release.Name }}-acls
+        - name: vault-secret-engines
+          configMap:
+            name: {{ .Release.Name }}-secret-engines
+        {{- range $authmethod, $userData := .Values.authmethods }}
+        - name: {{ $authmethod }}
+          configMap:
+            name: {{ $release.Name }}-{{ $authmethod }}
+        {{- end }}
+  backoffLimit: 4

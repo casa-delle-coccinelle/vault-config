@@ -1,0 +1,21 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Release.Name }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vault
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  endpoints:
+    - interval: 30s
+      path: /v1/sys/metrics
+      params:
+        format: 
+          - prometheus
+      port: http
+      scheme: http
+      scrapeTimeout: 30s
+      bearerTokenFile: /vault/secrets/token

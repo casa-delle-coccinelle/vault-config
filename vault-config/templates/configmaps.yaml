@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-acls
+data:
+  {{- $files := .Files }}
+  {{- range tuple "files/acl/prometheus-metrics" }}
+  {{ . | base }}: |-
+    {{ $files.Get . | nindent 4 }}
+  {{- end }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-secret-engines
+data:
+  {{- range .Values.vaultSecretEngines }}
+  {{ .name }}: {{ .parameters | default "" | quote }}
+  {{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-env
+data: 
+{{ toYaml .Values.env | indent 2 }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-hashicorp-vault
+  namespace: {{ .Values.prometheusNamespace }}
+  annotations:
+    grafana.com/source: "https://grafana.com/grafana/dashboards/12904"
+  labels:
+    {{ .Values.grafanaDashboardLabels | toYaml | nindent 4 }}
+data: 
+  hashicorp-vault.json: |-
+    {{ .Files.Get "files/grafana-dashboards/hashicorp-vault.json" | nindent 4 }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-scripts
+data:
+  {{- $files := .Files }}
+  {{- range tuple "files/env.sh" "files/init-script.sh" "files/dynamodb.sh" "files/acls.sh" "files/auth.sh" "files/secret_engines.sh" }}
+  {{ . | base }}: |-
+    {{ $files.Get . | nindent 4 }}
+  {{- end }}
+
+---
+{{- $release := .Release -}}
+apiVersion: v1
+kind: ConfigMapList
+items:
+{{- range $authmethod, $userData := .Values.authmethods }}
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: {{ $release.Name }}-{{ $authmethod }}
+    data:
+      {{- range $user, $conf := $userData }}
+      {{ $user }}: |-
+        {{ $conf | nindent 8 }}
+      {{- end }}
+{{- end }}
