@@ -27,10 +27,10 @@ spec:
             - /bin/bash
             - -c
             - |
-              bash /Scripts/init-script.sh
-              bash /Scripts/dynamodb.sh
-              bash /Scripts/secret_engines.sh
-              bash /Scripts/acls.sh
+              bash -x /Scripts/init-script.sh
+              bash -x /Scripts/dynamodb.sh
+              bash -x /Scripts/secret_engines.sh
+              bash -x /Scripts/acls.sh
               bash -x /Scripts/auth.sh 
           env:
             - name: VAULT_POD_SELECTOR
