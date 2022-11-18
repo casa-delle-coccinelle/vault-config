@@ -55,6 +55,7 @@ spec:
               mountPath: "/AuthMethods/{{ $authmethod }}"
             {{- end }}
       restartPolicy: Never
+      terminationGracePeriodSeconds: 5
       volumes: 
         - name: vault-scripts
           configMap:
