@@ -1,6 +1,6 @@
 image:
   repository: 926833232050.dkr.ecr.eu-central-1.amazonaws.com/vault
-  tag: 1.9.2-0.1.0
+  tag: 1.12.0-0.1.1
   pullPolicy: IfNotPresent
 
 imagePullSecrets: []
