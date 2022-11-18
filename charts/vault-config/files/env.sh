@@ -70,7 +70,7 @@ function store_key() {
       fi
   fi
   aws secretsmanager put-secret-value --secret-id "${secret_arn}" --secret-string "${key}"
-  if [ "${?}" != 0]; then
+  if [ "${?}" != 0 ]; then
       log_output "Can't store key ${id} of type ${key_type} in AWS SecretsManager"
       exit 4
   fi
