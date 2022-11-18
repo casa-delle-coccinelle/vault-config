@@ -7,7 +7,7 @@
 #
 
 function log_output() {
-    echo "[$(date date --iso-8601=ns)] ${@}" >&2
+    echo "[$(date date -Is)] ${@}" >&2
 }
 
 function login(){
