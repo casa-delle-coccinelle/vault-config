@@ -116,6 +116,8 @@ function kubernetes(){
     log_output "Configuring K8s auth"
     vault auth enable kubernetes 2>/dev/null || true
 
+    echo "kubectl --namespace ${VAULT_NAMESPACE} create token ${VAULT_SA_NAME}"
+    kubectl --namespace ${VAULT_NAMESPACE} create token ${VAULT_SA_NAME}
     VAULT_TOKEN="$(kubectl --namespace ${VAULT_NAMESPACE} create token ${VAULT_SA_NAME})"
     if [ "${VAULT_TOKEN}" == "" ]; then
         sleep 1000000
