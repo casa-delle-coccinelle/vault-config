@@ -7,7 +7,7 @@
 #
 
 function log_output() {
-    echo "[$(date date -Is)] ${@}" >&2
+    echo "[$(date -Is)] ${@}" >&2
 }
 
 function login(){
