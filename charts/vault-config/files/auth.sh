@@ -113,16 +113,16 @@ function kubernetes_handle(){
 }
 
 function kubernetes(){
-  vault auth enable kubernetes 2>/dev/nul || true
+    log_output "Configuring K8s auth"
+    vault auth enable kubernetes 2>/dev/null || true
 
-  SA_TOKEN_SECRET="$(kubectl get sa ${VAULT_SA_NAME} -o template='{{ with (index .secrets 0) }}{{ .name }}{{ end }}')"
-  kubectl get secrets "${SA_TOKEN_SECRET}" -o template='{{ .data.token }}' | base64 -w 0 > /tmp/token_value
-  vault write auth/kubernetes/config \
-      kubernetes_host="https://$KUBERNETES_PORT_443_TCP_ADDR:443" \
-      token_reviewer_jwt="$(cat /tmp/token_value)" \
-      kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
-      issuer="https://kubernetes.default.svc.cluster.local" || true
-  kubernetes_handle
+    vault write auth/kubernetes/config \
+        kubernetes_host="https://$KUBERNETES_PORT_443_TCP_ADDR:443" \
+        token_reviewer_jwt="$(kubectl --namespace ${VAULT_NAMESPACE} create token ${VAULT_SA_NAME})" \
+        kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+        issuer="https://kubernetes.default.svc.cluster.local" || true
+
+    kubernetes_handle
 }
 
 function auth_methods(){
