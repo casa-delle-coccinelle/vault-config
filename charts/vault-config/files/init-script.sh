@@ -15,7 +15,8 @@ export RECOVERY_SHARES="${RECOVERY_SHARES:-1}"
 
 
 function init_vault(){
-    echo "Initialize Vault"
+    log_output "Initializing Vault"
+    #TODO: Err handling
     vault operator init -recovery-shares ${RECOVERY_SHARES} -recovery-threshold ${RECOVERY_TRESHOLD} | tee "${RECOVERY_KEYS_PATH}" > /dev/null
 }
 

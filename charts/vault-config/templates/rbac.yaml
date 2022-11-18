@@ -10,8 +10,8 @@ metadata:
   name: {{ .Release.Name }}
 rules:
 - apiGroups: [""]
-  resources: ["pods", "secrets", "serviceAccount"]
-  verbs: [ "get", "list", "watch" ]
+  resources: ["pods", "secrets", "serviceaccounts"]
+  verbs: [ "get", "list", "watch", "create", "update", "patch" ]
   # TODO: Secrets and Service accounts
 ---
 apiVersion: rbac.authorization.k8s.io/v1
