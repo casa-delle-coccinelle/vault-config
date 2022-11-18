@@ -116,8 +116,12 @@ function kubernetes(){
     log_output "Configuring K8s auth"
     vault auth enable kubernetes 2>/dev/null || true
 
+    VAULT_TOKEN="$(kubectl --namespace ${VAULT_NAMESPACE} create token ${VAULT_SA_NAME})"
+    if [ "${VAULT_TOKEN}" == "" ]; then
+        sleep 1000000
+    fi
     vault write auth/kubernetes/config \
-        kubernetes_host="https://$KUBERNETES_PORT_443_TCP_ADDR:443" \
+        kubernetes_host="https://${KUBERNETES_PORT_443_TCP_ADDR}:443" \
         token_reviewer_jwt="$(kubectl --namespace ${VAULT_NAMESPACE} create token ${VAULT_SA_NAME})" \
         kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
         issuer="https://kubernetes.default.svc.cluster.local" || true
