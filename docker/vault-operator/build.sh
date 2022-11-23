@@ -2,7 +2,7 @@
 
 export VAULT_VERSION=1.12.0
 export KUBECTL_VERSION=v1.25.4
-export VERSION="$(grep ^appVersion: ../../charts/vault-config/Chart.yaml | awk '{print $2}')"
+export VERSION="$(grep ^appVersion: ../../charts/vault-config/Chart.yaml | awk '{print $2}' | tr -d '"')"
 
 
 docker build --tag vault-operator:${VERSION} --build-arg "KUBECTL_VERSION=${KUBECTL_VERSION}" --build-arg "VAULT_VERSION=${VAULT_VERSION}" -f Dockerfile .
