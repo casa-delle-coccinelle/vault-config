@@ -12,11 +12,12 @@ export VAULT_POD_SELECTOR="${VAULT_POD_SELECTOR:-app.kubernetes.io/instance=hc-v
 export VAULT_POD_ADDRESS=
 export RECOVERY_TRESHOLD="${RECOVERY_TRESHOLD:-1}"
 export RECOVERY_SHARES="${RECOVERY_SHARES:-1}"
+export ROOT_TOKEN
 
 
 function init_vault(){
     log_output "Initializing Vault"
-    #TODO: Err handling
+
     vault operator init -recovery-shares ${RECOVERY_SHARES} -recovery-threshold ${RECOVERY_TRESHOLD} | tee "${RECOVERY_KEYS_PATH}" > /dev/null
 }
 
@@ -31,8 +32,19 @@ function parse_recovery_keys(){
 }
 
 function parse_root_token(){
-    export ROOT_TOKEN=$(cat "${RECOVERY_KEYS_PATH}" | grep '^Initial Root' | awk '{print $4}')
+    ROOT_TOKEN=$(cat "${RECOVERY_KEYS_PATH}" | grep '^Initial Root' | awk '{print $4}')
     store_key "${ROOT_TOKEN}" root-token 1
+}
+
+function wait_vault_status(){
+    status=""
+
+    log_output "Waiting for vault to unseal"
+    while [ "${status}" != "false" ]; do
+        sleep 1
+        status="$(vault status | grep ^Sealed | awk '{print $2}')"
+    done
+    log_output "Vault is unsealed"
 }
 
 function main() {
@@ -44,7 +56,7 @@ function main() {
     parse_recovery_keys
     echo "Remove keys from disk"
     shred "${RECOVERY_KEYS_PATH}"
-
+    wait_vault_status
   else
     echo "Vault has already been initialized, skipping."
   fi
