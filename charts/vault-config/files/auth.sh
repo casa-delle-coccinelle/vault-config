@@ -100,6 +100,7 @@ function kubernetes_handle(){
         sa_name="$(jq -r '."sa-name"' "${VAULT_KUBERNETES_PATH}/${sa}")"
         acls="$(jq -r '.acls | join(",")' "${VAULT_KUBERNETES_PATH}/${sa}")"
         log_output "Configuring k8s auth for SA ${sa_name} in namespaces ${namespace} with ACLs ${acls}"
+        set -x
         vault write auth/kubernetes/config \
             kubernetes_host=https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT \
             disable_local_ca_jwt=true
@@ -109,6 +110,7 @@ function kubernetes_handle(){
         #    bound_service_account_namespaces=${namespace} \
         #    policies="${acls}" \
         #    ttl=24h
+        set +x
         if [ "${?}" != 0 ]; then
             log_output "k8s auth for SA ${sa_name} in namespaces ${namespace} with ACLs ${acls} was not configured successfully"
         fi
