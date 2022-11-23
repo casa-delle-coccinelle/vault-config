@@ -32,7 +32,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .Release.Name }}-hashicorp-vault
-  namespace: {{ .Values.prometheusNamespace }}
+  namespace: {{ .Values.grafanaNamespace }}
   annotations:
     grafana.com/source: "https://grafana.com/grafana/dashboards/12904"
   labels:

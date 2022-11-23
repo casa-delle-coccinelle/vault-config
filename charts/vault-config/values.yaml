@@ -36,6 +36,7 @@ extraSecretEnvironmentVars: []
 
 
 prometheusNamespace: prometheus
+grafanaNamespace: "{{ .Values.prometheusNamespace }}"
 grafanaDashboardLabels:
   grafana_dashboard: "1"
 
