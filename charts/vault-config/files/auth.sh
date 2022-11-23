@@ -100,12 +100,15 @@ function kubernetes_handle(){
         sa_name="$(jq -r '."sa-name"' "${VAULT_KUBERNETES_PATH}/${sa}")"
         acls="$(jq -r '.acls | join(",")' "${VAULT_KUBERNETES_PATH}/${sa}")"
         log_output "Configuring k8s auth for SA ${sa_name} in namespaces ${namespace} with ACLs ${acls}"
-        vault write \
-            auth/kubernetes/role/${sa} \
-            bound_service_account_names=${sa_name} \
-            bound_service_account_namespaces=${namespace} \
-            policies="${acls}" \
-            ttl=24h
+        vault write auth/kubernetes/config \
+            kubernetes_host=https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT \
+            disable_local_ca_jwt=true
+        #vault write \
+        #    auth/kubernetes/role/${sa} \
+        #    bound_service_account_names=${sa_name} \
+        #    bound_service_account_namespaces=${namespace} \
+        #    policies="${acls}" \
+        #    ttl=24h
         if [ "${?}" != 0 ]; then
             log_output "k8s auth for SA ${sa_name} in namespaces ${namespace} with ACLs ${acls} was not configured successfully"
         fi
@@ -117,8 +120,6 @@ function kubernetes(){
     vault auth enable kubernetes 2>/dev/null || true
 
     VAULT_TOKEN="$(kubectl --namespace ${VAULT_NAMESPACE} create token ${VAULT_SA_NAME})"
-    echo "vault write auth/kubernetes/config kubernetes_host='https://${KUBERNETES_PORT_443_TCP_ADDR}:443' token_reviewer_jwt='$(kubectl --namespace ${VAULT_NAMESPACE} create token ${VAULT_SA_NAME})' kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt issuer='https://kubernetes.default.svc.cluster.local'"
-    cat /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
     vault write auth/kubernetes/config \
         kubernetes_host="https://${KUBERNETES_PORT_443_TCP_ADDR}:443" \
         token_reviewer_jwt="$(kubectl --namespace ${VAULT_NAMESPACE} create token ${VAULT_SA_NAME})" \
