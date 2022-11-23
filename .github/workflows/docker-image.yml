@@ -19,6 +19,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+      packages: write
 
     steps:
       # Install the cosign tool except on PR
