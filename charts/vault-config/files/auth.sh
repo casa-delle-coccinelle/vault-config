@@ -121,9 +121,6 @@ function kubernetes(){
         token_reviewer_jwt="$(kubectl --namespace ${VAULT_NAMESPACE} create token ${VAULT_SA_NAME})" \
         kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
         issuer="https://kubernetes.default.svc.cluster.local"
-    if [ "${?}" != "0" ]; then
-        sleep 50000
-    fi
     kubernetes_handle
 }
 
