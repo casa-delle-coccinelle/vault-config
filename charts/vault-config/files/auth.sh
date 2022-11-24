@@ -125,14 +125,43 @@ function kubernetes(){
 }
 
 function auth_methods(){
-  userpass
-  kubernetes
+    userpass
+    kubernetes
+}
+
+function entity_handle(){
+    entity_file="${1}"
+    log_output "Reading entity from entity file ${entity_file}"
+    entity="$(jq -r .name ${entity_file})"
+    log_output "Collecting entity aliases for entity ${entity} in file ${entity_file}"
+    entity_aliases="$(jq -r '.aliases | length' ${entity_file})"
+    log_output "Found ${entity_aliases} for entity ${entity}"
+    entity_id="$(vault write -format=json identity/entity name="${entity}" | jq -r ".data.id")"
+    log_output "Entity ${entity} has id ${entity_id} in ${VAULT_ADDR}"
+
+    for i in seq 1 $((${entity_aliases} - 1)); do
+        entity_alias="$(jq -r '.aliases[1].name' ${entity_file})"
+        entity_alias_authmethod="$(jq -r '.aliases[1].authMethod' ${entity_file})"
+        entity_alias_authmethod_accessor="$(vault auth list -format=json | jq -r ".[\"${entity_alias_authmethod}/\"].accessor")"
+        log_output "Configuring entity alias ${entity_alias} for entity ${entity} with auth method ${entity_alias_authmethod}(${entity_alias_authmethod_accessor})"
+        vault write identity/entity-alias name="${entity_alias}" \
+            canonical_id="${entity_id}" \
+            mount_accessor="${entity_alias_authmethod_accessor}" || true
+    done
+}
+
+function entities(){
+    for entity_file in $(ls -1 ${VAULT_ENTITIES}); do
+        log_output "Handling identity from file ${entity_file}"
+        entity_handle "${entity_file}"
+    done
 }
 
 function main() {
   select_init_pod_address
   login
   auth_methods
+  entities
 }
 
 main

@@ -53,6 +53,33 @@ authmethods:
     #        "prometheus-metrics"
     #      ]
     #  }
+  kubernetes: {}
+    #prometheus: |-
+    #  {
+    #    "namespace": "prometheus",
+    #    "sa-name": "prometheus-kube-prometheus-prometheus",
+    #    "acls":
+    #      [
+    #        "prometheus-metrics"
+    #      ]
+    #  }
+
+entities: {}
+# prometheus: |-
+#   {
+#     "name": "prometheus",
+#     "aliases": [
+#       {
+#         "name": "prometheus",
+#         "authMethod": "userpass"
+#       },
+#       {
+#         "name": "prometheus",
+#         "authMethod": "ali2"
+#       }
+#     ]
+#   }
+
 
 vaultSecretEngines: []
   # - name: pki
