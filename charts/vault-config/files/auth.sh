@@ -152,6 +152,8 @@ function entity_handle(){
 }
 
 function entities(){
+    log_output "Reading entities from ${VAULT_ENTITIES}"
+    ls -la ${VAULT_ENTITIES}
     for entity_file in $(ls -1 ${VAULT_ENTITIES}); do
         log_output "Handling identity from file ${entity_file}"
         entity_handle "${entity_file}"
@@ -163,6 +165,7 @@ function main() {
   login
   auth_methods
   entities
+  sleep 500000
 }
 
 main
