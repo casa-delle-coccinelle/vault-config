@@ -54,6 +54,8 @@ spec:
             - name: {{ $authmethod }}
               mountPath: "/AuthMethods/{{ $authmethod }}"
             {{- end }}
+            - name: vault-entities
+              mountPath: /Entities
       restartPolicy: Never
       terminationGracePeriodSeconds: 5
       volumes: 
@@ -71,4 +73,7 @@ spec:
           configMap:
             name: {{ $release.Name }}-{{ $authmethod }}
         {{- end }}
+        - name: vault-entities
+          configMap:
+            name: {{ .Release.Name }}-entities
   backoffLimit: 4
