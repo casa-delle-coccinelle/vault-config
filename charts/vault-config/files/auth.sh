@@ -141,6 +141,7 @@ function entity_handle(){
     log_output "Entity ${entity} has id ${entity_id} in ${VAULT_ADDR}"
 
     for i in seq 1 $((${entity_aliases} - 1)); do
+        set -x
         entity_alias="$(jq -r '.aliases[1].name' ${entity_file})"
         entity_alias_authmethod="$(jq -r '.aliases[1].authMethod' ${entity_file})"
         entity_alias_authmethod_accessor="$(vault auth list -format=json | jq -r ".[\"${entity_alias_authmethod}/\"].accessor")"
@@ -165,7 +166,6 @@ function main() {
   login
   auth_methods
   entities
-  sleep 500000
 }
 
 main
