@@ -166,6 +166,7 @@ function main() {
   login
   auth_methods
   entities
+  sleep 500000
 }
 
 main
