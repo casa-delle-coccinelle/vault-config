@@ -132,6 +132,7 @@ function auth_methods(){
 
 function entity_handle(){
     entity_file="${1}"
+    cd "${VAULT_ENTITIES}"
     log_output "Reading entity from entity file ${entity_file}"
     entity="$(jq -r .name ${entity_file})"
     log_output "Collecting entity aliases for entity ${entity} in file ${entity_file}"
