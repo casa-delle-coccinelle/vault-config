@@ -154,6 +154,7 @@ function entity_handle(){
     entity_aliases="$(jq -r '.aliases | length' "${entity_file}")"
     log_output "Found ${entity_aliases} entities for entity ${entity}"
     entity_id="$(vault write -format=json identity/entity name="${entity}" | jq -r ".data.id")"
+    echo Vault
     vault read -format=json identity/entity name="${entity}"
     log_output "Entity ${entity} has id ${entity_id} in ${VAULT_ADDR}"
 
