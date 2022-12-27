@@ -81,7 +81,7 @@ function userpass_handle(){
 
     log_output "Handling users from ${VAULT_USERPASS_PATH}"
     for user_path in "${VAULT_USERPASS_PATH}"/*; do
-        if [ -e "${user_path}" ]; then
+        if [ ! -e "${user_path}" ]; then
             log_output "No userpass users defined. Skipping ..."
             return
         fi
@@ -107,8 +107,8 @@ function userpass(){
 function kubernetes_handle(){
     log_output "Configuring k8s authentication"
     for sa_path in "${VAULT_KUBERNETES_PATH}"/*; do
-        if [ -e "${sa_path}" ]; then
-            echo "No k8s auth configured. Skipping ..."
+        if [ ! -e "${sa_path}" ]; then
+            log_output "No k8s auth configured. Skipping ..."
             return
         fi
         sa="$(basename "${sa_path}")"
@@ -171,7 +171,7 @@ function entity_handle(){
 function entities(){
     log_output "Reading entities from ${VAULT_ENTITIES}"
     for entity_file in "${VAULT_ENTITIES}"/*; do
-        if [ -e "${entity_file}" ]; then
+        if [ ! -e "${entity_file}" ]; then
             log_output "No entities configured. Skipping..."
             return
         fi
