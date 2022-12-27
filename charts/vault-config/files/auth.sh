@@ -155,8 +155,8 @@ function entity_handle(){
     log_output "Found ${entity_aliases} entities for entity ${entity}"
     vault write -format=json identity/entity name="${entity}" > /tmp/o
     #entity_id="$(vault write -format=json identity/entity name="${entity}" | jq -r ".data.id")"
-    cat o
-    entity_id="$(jq -r ".data.id" o)"
+    cat /tmp/o
+    entity_id="$(jq -r ".data.id" /tmp/o)"
     log_output "Entity ${entity} has id ${entity_id} in ${VAULT_ADDR}"
 
     for i in seq 1 $(("${entity_aliases}" - 1)); do
