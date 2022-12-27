@@ -153,10 +153,9 @@ function entity_handle(){
     log_output "Collecting entity aliases for entity ${entity} in file ${entity_file}"
     entity_aliases="$(jq -r '.aliases | length' "${entity_file}")"
     log_output "Found ${entity_aliases} entities for entity ${entity}"
-    vault write -format=json identity/entity name="${entity}" | tee /tmp/o 
-    #entity_id="$(vault write -format=json identity/entity name="${entity}" | jq -r ".data.id")"
-    cat /tmp/o
-    entity_id="$(jq -r ".data.id" /tmp/o)"
+    vault write -format=json identity/entity name="${entity}"
+
+    entity_id="$(vault read identity/entity/name/prometheus -format=json | jq -r ".data.id")"
     log_output "Entity ${entity} has id ${entity_id} in ${VAULT_ADDR}"
 
     for i in $( seq 0 $(("${entity_aliases}" - 1)) ); do
