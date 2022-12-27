@@ -1,5 +1,6 @@
 #! /bin/bash
 
+# shellcheck source=/dev/null
 source "$(dirname -- "${BASH_SOURCE[0]}")/env.sh"
 echo "## AUTH"
 
@@ -80,6 +81,10 @@ function userpass_handle(){
 
     log_output "Handling users from ${VAULT_USERPASS_PATH}"
     for user_path in "${VAULT_USERPASS_PATH}"/*; do
+        if [ -e "${user_path}" ]; then
+            log_output "No userpass users defined. Skipping ..."
+            return
+        fi
         user="$(basename "${user_path}")"
         configure_user "${user}" "${user_path}"
         for acl in $(jq -r '.acls[]' "${user_path}" 2> /dev/null); do
@@ -102,6 +107,10 @@ function userpass(){
 function kubernetes_handle(){
     log_output "Configuring k8s authentication"
     for sa_path in "${VAULT_KUBERNETES_PATH}"/*; do
+        if [ -e "${sa_path}" ]; then
+            echo "No k8s auth configured. Skipping ..."
+            return
+        fi
         sa="$(basename "${sa_path}")"
         namespace="$(jq -r '.namespace' "${sa_path}")"
         sa_name="$(jq -r '."sa-name"' "${sa_path}")"
@@ -148,6 +157,7 @@ function entity_handle(){
     log_output "Entity ${entity} has id ${entity_id} in ${VAULT_ADDR}"
 
     for i in seq 1 $(("${entity_aliases}" - 1)); do
+        i="-${i}"
         entity_alias="$(jq -r '.aliases[1].name' "${entity_file}")"
         entity_alias_authmethod="$(jq -r '.aliases[1].authMethod' "${entity_file}")"
         entity_alias_authmethod_accessor="$(vault auth list -format=json | jq -r ".[\"${entity_alias_authmethod}/\"].accessor")"
@@ -161,6 +171,10 @@ function entity_handle(){
 function entities(){
     log_output "Reading entities from ${VAULT_ENTITIES}"
     for entity_file in "${VAULT_ENTITIES}"/*; do
+        if [ -e "${entity_file}" ]; then
+            log_output "No entities configured. Skipping..."
+            return
+        fi
         log_output "Handling identity from file ${entity_file}"
         entity_handle "${entity_file}"
     done
