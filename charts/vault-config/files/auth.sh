@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 source "$(dirname -- "${BASH_SOURCE[0]}")/env.sh"
 echo "## AUTH"
@@ -25,12 +25,14 @@ function generate_secret(){
       create \
       secret \
       generic \
-      ${INSTANCE}-vault-user \
+      "${INSTANCE}-vault-user" \
       --from-literal=USERNAME="${user}" \
       --from-literal=PASSWORD="${vault_user_pass}" \
       --dry-run=client -o yaml | kubectl --namespace="${namespace}" apply -f -
 
-    if [ "${?}" != 0 ]; then
+    e_code="${?}"
+
+    if [ "${e_code}" != 0 ]; then
         log_output "Failed to create secret ${INSTANCE}-vault-user in namespace ${namespace}"
         return 1
     else
@@ -40,22 +42,22 @@ function generate_secret(){
 
 function configure_user(){
     user="${1}"
-    namespaces="$(jq -r '.namespaces[]' ${2} 2> /dev/null)"
+    namespaces="$(jq -r '.namespaces[]' "${2}" 2> /dev/null)"
 
     log_output "Configuring user ${user} in namespaces ${namespaces}"
     log_output "Checking if user ${user} exists"
-    vault read auth/userpass/users/${user}
+    vault read "auth/userpass/users/${user}"
     user_exists="${?}"
     vault_user_pass="$(LC_ALL=C tr -dc "A-Za-z0-9!#$%&'()*+,-./:;<=>?@[\]^_\`\{|}~" </dev/urandom | head -c 25 ; echo)"
 
     if [ "${user_exists}" != "0" ]; then
         log_output "User ${user} does not exist. Populating credentials in namespaces"
         for namespace in ${namespaces}; do
-            kubectl auth can-i create secret -n ${namespace} || (
+            kubectl auth can-i create secret -n "${namespace}" || (
                 log_output "Can't generate secret in ${namespace}" && \
                 return 1
             )
-            kubectl auth can-i update secret -n ${namespace} || (
+            kubectl auth can-i update secret -n "${namespace}" || (
                 log_output "Can't update secret in ${namespace}" && \
                 return 1
             )
@@ -64,9 +66,10 @@ function configure_user(){
 
         log_output "Configuring user ${user} in ${VAULT_ADDR}"
         vault write \
-            auth/userpass/users/${user} \
+            "auth/userpass/users/${user}" \
             password="${vault_user_pass}"
-        if [ "$?" != 0 ]; then
+        e_code="${?}"
+        if [ "${e_code}" != 0 ]; then
             log_output "Failed to configure credentials for user ${user} in ${VAULT_ADDR}"
             return 2
         fi
@@ -76,12 +79,14 @@ function configure_user(){
 function userpass_handle(){
 
     log_output "Handling users from ${VAULT_USERPASS_PATH}"
-    for user in $(ls -1 ${VAULT_USERPASS_PATH} 2>/dev/null); do
-        configure_user "${user}" "${VAULT_USERPASS_PATH}/${user}"
-        for acl in $(jq -r '.acls[]' "${VAULT_USERPASS_PATH}/${user}" 2> /dev/null); do
+    for user_path in "${VAULT_USERPASS_PATH}"/*; do
+        user="$(basename "${user_path}")"
+        configure_user "${user}" "${user_path}"
+        for acl in $(jq -r '.acls[]' "${user_path}" 2> /dev/null); do
             log_output "Adding user ${user} to ACL ${acl}"
-            vault write auth/userpass/users/${user}/policies policies="${acl}"
-            if [ "${?}" != 0]; then
+            vault write "auth/userpass/users/${user}/policies" policies="${acl}"
+            e_code="${?}"
+            if [ "${e_code}" != "0" ] ; then
                 log_output "Adding user ${user} to ACL ${acl} failed"
             fi
         done
@@ -96,18 +101,20 @@ function userpass(){
 
 function kubernetes_handle(){
     log_output "Configuring k8s authentication"
-    for sa in $(ls -1 ${VAULT_KUBERNETES_PATH}); do
-        namespace="$(jq -r '.namespace' "${VAULT_KUBERNETES_PATH}/${sa}")"
-        sa_name="$(jq -r '."sa-name"' "${VAULT_KUBERNETES_PATH}/${sa}")"
-        acls="$(jq -r '.acls | join(",")' "${VAULT_KUBERNETES_PATH}/${sa}")"
+    for sa_path in "${VAULT_KUBERNETES_PATH}"/*; do
+        sa="$(basename "${sa_path}")"
+        namespace="$(jq -r '.namespace' "${sa_path}")"
+        sa_name="$(jq -r '."sa-name"' "${sa_path}")"
+        acls="$(jq -r '.acls | join(",")' "${sa_path}")"
         log_output "Configuring k8s auth for SA ${sa_name} in namespaces ${namespace} with ACLs ${acls}"
         vault write \
-            auth/kubernetes/role/${sa} \
-            bound_service_account_names=${sa_name} \
-            bound_service_account_namespaces=${namespace} \
+            "auth/kubernetes/role/${sa}" \
+            "bound_service_account_names=${sa_name}" \
+            "bound_service_account_namespaces=${namespace}" \
             policies="${acls}" \
             ttl=24h
-        if [ "${?}" != 0 ]; then
+        e_code="${?}"
+        if [ "${e_code}" != 0 ]; then
             log_output "k8s auth for SA ${sa_name} in namespaces ${namespace} with ACLs ${acls} was not configured successfully"
         fi
     done
@@ -119,7 +126,7 @@ function kubernetes(){
 
     vault write auth/kubernetes/config \
         kubernetes_host="https://${KUBERNETES_PORT_443_TCP_ADDR}:443" \
-        token_reviewer_jwt="$(kubectl --namespace ${VAULT_NAMESPACE} create token ${VAULT_SA_NAME})" \
+        token_reviewer_jwt="$(kubectl --namespace "${VAULT_NAMESPACE}" create token "${VAULT_SA_NAME}")" \
         kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
         issuer="https://kubernetes.default.svc.cluster.local"
     kubernetes_handle
@@ -132,18 +139,17 @@ function auth_methods(){
 
 function entity_handle(){
     entity_file="${1}"
-    cd "${VAULT_ENTITIES}"
     log_output "Reading entity from entity file ${entity_file}"
-    entity="$(jq -r .name ${entity_file})"
+    entity="$(jq -r .name "${entity_file}")"
     log_output "Collecting entity aliases for entity ${entity} in file ${entity_file}"
-    entity_aliases="$(jq -r '.aliases | length' ${entity_file})"
+    entity_aliases="$(jq -r '.aliases | length' "${entity_file}")"
     log_output "Found ${entity_aliases} entities for entity ${entity}"
     entity_id="$(vault write -format=json identity/entity name="${entity}" | jq -r ".data.id")"
     log_output "Entity ${entity} has id ${entity_id} in ${VAULT_ADDR}"
 
-    for i in seq 1 $((${entity_aliases} - 1)); do
-        entity_alias="$(jq -r '.aliases[1].name' ${entity_file})"
-        entity_alias_authmethod="$(jq -r '.aliases[1].authMethod' ${entity_file})"
+    for i in seq 1 $(("${entity_aliases}" - 1)); do
+        entity_alias="$(jq -r '.aliases[1].name' "${entity_file}")"
+        entity_alias_authmethod="$(jq -r '.aliases[1].authMethod' "${entity_file}")"
         entity_alias_authmethod_accessor="$(vault auth list -format=json | jq -r ".[\"${entity_alias_authmethod}/\"].accessor")"
         log_output "Configuring entity alias ${entity_alias} for entity ${entity} with auth method ${entity_alias_authmethod}(${entity_alias_authmethod_accessor})"
         vault write identity/entity-alias name="${entity_alias}" \
@@ -154,7 +160,7 @@ function entity_handle(){
 
 function entities(){
     log_output "Reading entities from ${VAULT_ENTITIES}"
-    for entity_file in $(ls -1 ${VAULT_ENTITIES}); do
+    for entity_file in "${VAULT_ENTITIES}"/*; do
         log_output "Handling identity from file ${entity_file}"
         entity_handle "${entity_file}"
     done
