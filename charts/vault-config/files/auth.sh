@@ -159,10 +159,9 @@ function entity_handle(){
     entity_id="$(jq -r ".data.id" /tmp/o)"
     log_output "Entity ${entity} has id ${entity_id} in ${VAULT_ADDR}"
 
-    for i in seq 1 $(("${entity_aliases}" - 1)); do
-        i="-${i}"
-        entity_alias="$(jq -r '.aliases[1].name' "${entity_file}")"
-        entity_alias_authmethod="$(jq -r '.aliases[1].authMethod' "${entity_file}")"
+    for i in $( seq 0 $(("${entity_aliases}" - 1)) ); do
+        entity_alias="$(jq -r ".aliases[${i}].name" "${entity_file}")"
+        entity_alias_authmethod="$(jq -r ".aliases[${i}].authMethod" "${entity_file}")"
         entity_alias_authmethod_accessor="$(vault auth list -format=json | jq -r ".[\"${entity_alias_authmethod}/\"].accessor")"
         log_output "Configuring entity alias ${entity_alias} for entity ${entity} with auth method ${entity_alias_authmethod}(${entity_alias_authmethod_accessor})"
         vault write identity/entity-alias name="${entity_alias}" \
