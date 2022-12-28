@@ -153,8 +153,7 @@ function entity_handle(){
     log_output "Collecting entity aliases for entity ${entity} in file ${entity_file}"
     entity_aliases="$(jq -r '.aliases | length' "${entity_file}")"
     log_output "Found ${entity_aliases} entities for entity ${entity}"
-    vault write -format=json identity/entity name="${entity}"
-    vault read "identity/entity/name/${entity}"
+    vault write identity/entity name="${entity}"
 
     entity_id="$(vault read "identity/entity/name/${entity}" -format=json | jq -r ".data.id")"
     log_output "Entity ${entity} has id ${entity_id} in ${VAULT_ADDR}"
@@ -168,7 +167,43 @@ function entity_handle(){
             canonical_id="${entity_id}" \
             mount_accessor="${entity_alias_authmethod_accessor}" || true
     done
+    #TODO: CHECK ME
+    for acl in $(jq -r .acls[] "${entity_file}"); do
+        log_output "Adding acl ${acl} to entity ${entity}"
+        vault write "identity/entity/name/${entity}" policies="${acl}"
+    done
 }
+
+#TODO: CHECK ME
+#TODO: ADD MOUNT
+#TODO: COMMIT HELMRELEASE
+function vault_groups_handle(){
+    vault_group_file="${1}"
+    log_output "Reading group from group file ${vault_group_file}"
+    group="$(jq -r .name "${vault_group_file}")"
+    
+    vault write identity/group name="${group}"
+    log_output "Group ${group} created in ${VAULT_ADDR}"
+
+    for entity in $(jq -r .entities[] "${vault_group_file}"); do
+        log_output "Getting entity ${entity}'s ID"
+        entity_id="$(vault read "identity/entity/name/${entity}" -format=json | jq -r ".data.id")"
+        log_output "Adding entity ${entity} with ID ${entity_id} to group ${group}"
+        vault write identity/group name="${group}" member_entity_ids="${entity_id}"
+    done
+    for acl in $(jq -r .acls[] "${vault_group_file}"); do
+        log_output "Adding acl ${acl} to group ${group}"
+        vault write identity/group name="${group}" policies="${acl}"
+    done
+
+}
+
+#vault write identity/group name="engineers" \
+#     policies="team-eng" \
+#     member_entity_ids=$(cat entity_id.txt) \
+#     metadata=team="Engineering" \
+#     metadata=region="North America"
+#
 
 function entities(){
     log_output "Reading entities from ${VAULT_ENTITIES}"
@@ -182,11 +217,26 @@ function entities(){
     done
 }
 
+function vault_groups(){
+    log_output "Reading groups definitions from ${VAULT_GROUPS}"
+   
+    for groups_file in "${VAULT_GROUPS}"/*; do
+        if [ ! -e "${groups_file}" ]; then
+            log_output "No groups configured. Skipping..."
+            return
+        fi
+        log_output "Handling groups from file ${groups_file}"
+        vault_groups_handle "${groups_file}"
+    done
+
+}
+
 function main() {
   select_init_pod_address
   login
   auth_methods
   entities
+  vault_groups
 }
 
 main
