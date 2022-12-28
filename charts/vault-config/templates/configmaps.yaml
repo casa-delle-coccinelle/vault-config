@@ -79,3 +79,13 @@ data:
   {{ $entity }}: |-
     {{ $definition | nindent 4 }}
   {{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-groups
+data:
+  {{- range $group, $definition := .Values.groups }}
+  {{ $group }}: |-
+    {{ $definition | nindent 4 }}
+  {{- end }}

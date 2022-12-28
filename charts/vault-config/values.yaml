@@ -81,6 +81,21 @@ entities: {}
 #   }
 
 
+groups: {}
+#groups:
+#  admins: |-
+#    {
+#      "name": "admins",
+#      "entities": [
+#        "dimitko",
+#        "nelinda"
+#      ],
+#      "acls": [
+#        "admins"
+#      ]
+#    }
+
+
 vaultSecretEngines: []
   # - name: pki
   #   parameters: -max-lease-ttl=8760h
