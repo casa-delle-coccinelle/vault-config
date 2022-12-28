@@ -12,6 +12,7 @@ export VAULT_POD_ADDRESS=
 export VAULT_USERPASS_PATH="/AuthMethods/userpass"
 export VAULT_KUBERNETES_PATH="/AuthMethods/kubernetes"
 export VAULT_ENTITIES="/Entities"
+export VAULT_GROUPS="/Groups"
 export VAULT_TOKEN=
 export VAULT_SA_NAME="${VAULT_SA_NAME:-hc-vault}"
 
