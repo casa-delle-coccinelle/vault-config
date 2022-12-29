@@ -15,8 +15,11 @@ export VAULT_TOKEN=
 function set_secret_engine(){
     secret_engine="${1}"
     secret_engine_params="$(cat "${VAULT_SECRET_ENGINES_PATH}/${1}")"
-
-    vault secrets enable "${secret_engine_params}" "${secret_engine}"
+    
+    if [ "$(vault secrets list "^${secret_engine}/")" == "" ]; then
+        vault secrets enable "${secret_engine_params}" "${secret_engine}"
+    fi
+    vault secrets tune "${secret_engine_params}" "${secret_engine}"
 }
 
 function set_secret_engines(){
