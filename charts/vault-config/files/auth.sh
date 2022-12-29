@@ -88,14 +88,13 @@ function userpass_handle(){
         fi
         user="$(basename "${user_path}")"
         configure_user "${user}" "${user_path}"
-        for acl in $(jq -r '.acls[]' "${user_path}" 2> /dev/null); do
-            log_output "Adding user ${user} to ACL ${acl}"
-            vault write "auth/userpass/users/${user}/policies" policies="${acl}"
-            e_code="${?}"
-            if [ "${e_code}" != "0" ] ; then
-                log_output "Adding user ${user} to ACL ${acl} failed"
-            fi
-        done
+        acls="$(jq -r '.acls | join(",")' "${sa_path}")"
+        log_output "Adding user ${user} to ACL(s) ${acls}"
+        vault write "auth/userpass/users/${user}/policies" policies="${acls}"
+        e_code="${?}"
+        if [ "${e_code}" != "0" ] ; then
+            log_output "Adding user ${user} to ACL ${acls} failed"
+        fi
     done
 }
 
@@ -150,14 +149,22 @@ function auth_methods(){
 function entity_handle(){
     entity_file="${1}"
     log_output "Reading entity from entity file ${entity_file}"
+
     entity="$(jq -r .name "${entity_file}")"
     log_output "Collecting entity aliases for entity ${entity} in file ${entity_file}"
+
     entity_aliases="$(jq -r '.aliases | length' "${entity_file}")"
-    log_output "Found ${entity_aliases} entities for entity ${entity}"
-    vault write identity/entity name="${entity}"
+    log_output "Found ${entity_aliases} aliases for entity ${entity}"
+
+    acls="$(jq -r '.acls | join(",")' "${entity_file}")"
+    log_output "Found ACL(s) ${acls} for entity ${entity}"
+
+    log_output "Creating entity ${entity}"
+    vault write identity/entity name="${entity}" policies="${acls}"
 
     entity_id="$(vault read "identity/entity/name/${entity}" -format=json | jq -r ".data.id")"
     log_output "Entity ${entity} has id ${entity_id} in ${VAULT_ADDR}"
+
 
     for i in $( seq 0 $(("${entity_aliases}" - 1)) ); do
         entity_alias="$(jq -r ".aliases[${i}].name" "${entity_file}")"
@@ -168,22 +175,19 @@ function entity_handle(){
             canonical_id="${entity_id}" \
             mount_accessor="${entity_alias_authmethod_accessor}" || true
     done
-    #TODO: CHECK ME
-    for acl in $(jq -r .acls[] "${entity_file}"); do
-        log_output "Adding acl ${acl} to entity ${entity}"
-        vault write "identity/entity/name/${entity}" policies="${acl}"
-    done
 }
 
-#TODO: CHECK ME
-#TODO: ADD MOUNT
-#TODO: COMMIT HELMRELEASE
 function vault_groups_handle(){
     vault_group_file="${1}"
     log_output "Reading group from group file ${vault_group_file}"
-    group="$(jq -r .name "${vault_group_file}")"
     
-    vault write identity/group name="${group}"
+    group="$(jq -r .name "${vault_group_file}")"
+    log_output "Group ${group} found"
+
+    acls="$(jq -r '.acls | join(",")' "${vault_group_file}")"
+    log_output "ACL(s) ${acls} found for group ${group}"
+    
+    vault write identity/group name="${group}" policies="${acls}"
     log_output "Group ${group} created in ${VAULT_ADDR}"
 
     for entity in $(jq -r .entities[] "${vault_group_file}"); do
@@ -192,19 +196,7 @@ function vault_groups_handle(){
         log_output "Adding entity ${entity} with ID ${entity_id} to group ${group}"
         vault write identity/group name="${group}" member_entity_ids="${entity_id}"
     done
-    for acl in $(jq -r .acls[] "${vault_group_file}"); do
-        log_output "Adding acl ${acl} to group ${group}"
-        vault write identity/group name="${group}" policies="${acl}"
-    done
-
 }
-
-#vault write identity/group name="engineers" \
-#     policies="team-eng" \
-#     member_entity_ids=$(cat entity_id.txt) \
-#     metadata=team="Engineering" \
-#     metadata=region="North America"
-#
 
 function entities(){
     log_output "Reading entities from ${VAULT_ENTITIES}"

@@ -21,7 +21,6 @@ rules:
 - apiGroups: [""]
   resources: ["serviceaccounts/token"]
   verbs: [ "get", "list", "watch",  "create" ]
-  # TODO: Secrets and Service accounts
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
