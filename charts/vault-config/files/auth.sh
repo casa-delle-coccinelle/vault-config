@@ -56,10 +56,10 @@ function configure_user(){
         log_output "User ${user} does not exist. Populating credentials in namespaces"
         for namespace in ${namespaces}; do
             kubectl auth can-i create secret -n "${namespace}" || (
-                log_output "Can't generate secret in ${namespace}" && \
+                log_output "Can't generate secret in ${namespace}" > /dev/null && \
                 return 1
             )
-            kubectl auth can-i update secret -n "${namespace}" || (
+            kubectl auth can-i update secret -n "${namespace}" > /dev/null || (
                 log_output "Can't update secret in ${namespace}" && \
                 return 1
             )
@@ -88,7 +88,7 @@ function userpass_handle(){
         fi
         user="$(basename "${user_path}")"
         configure_user "${user}" "${user_path}"
-        acls="$(jq -r '.acls | join(",")' "${sa_path}")"
+        acls="$(jq -r '.acls | join(",")' "${sa_path}" 2>/dev/null )"
         log_output "Adding user ${user} to ACL(s) ${acls}"
         vault write "auth/userpass/users/${user}/policies" policies="${acls}"
         e_code="${?}"
@@ -114,7 +114,7 @@ function kubernetes_handle(){
         sa="$(basename "${sa_path}")"
         namespace="$(jq -r '.namespace' "${sa_path}")"
         sa_name="$(jq -r '."sa-name"' "${sa_path}")"
-        acls="$(jq -r '.acls | join(",")' "${sa_path}")"
+        acls="$(jq -r '.acls | join(",")' "${sa_path}" 2>/dev/null )"
         log_output "Configuring k8s auth for SA ${sa_name} in namespaces ${namespace} with ACLs ${acls}"
         vault write \
             "auth/kubernetes/role/${sa}" \
@@ -156,7 +156,7 @@ function entity_handle(){
     entity_aliases="$(jq -r '.aliases | length' "${entity_file}")"
     log_output "Found ${entity_aliases} aliases for entity ${entity}"
 
-    acls="$(jq -r '.acls | join(",")' "${entity_file}")"
+    acls="$(jq -r '.acls | join(",")' "${entity_file}" 2>/dev/null )"
     log_output "Found ACL(s) ${acls} for entity ${entity}"
 
     log_output "Creating entity ${entity}"
@@ -184,7 +184,7 @@ function vault_groups_handle(){
     group="$(jq -r .name "${vault_group_file}")"
     log_output "Group ${group} found"
 
-    acls="$(jq -r '.acls | join(",")' "${vault_group_file}")"
+    acls="$(jq -r '.acls | join(",")' "${vault_group_file}" 2>/dev/null )"
     log_output "ACL(s) ${acls} found for group ${group}"
     
     vault write identity/group name="${group}" policies="${acls}"
