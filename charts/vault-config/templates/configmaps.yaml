@@ -4,7 +4,7 @@ metadata:
   name: {{ .Release.Name }}-acls
 data:
   {{- $files := .Files }}
-  {{- range tuple "files/acl/prometheus-metrics" }}
+  {{- range tuple "files/acl/prometheus-metrics" "files/acl/admin"  }}
   {{ . | base }}: |-
     {{ $files.Get . | nindent 4 }}
   {{- end }}
