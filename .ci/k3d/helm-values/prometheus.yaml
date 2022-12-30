@@ -1,0 +1,84 @@
+alertmanager:
+  config:
+    global:
+      opsgenie_api_key: nokey
+    receivers:
+    - name: opsgenie
+      opsgenie_configs:
+      - responders:
+        - name: test-cluster-team
+          type: team
+    route:
+      group_by:
+      - job
+      group_interval: 5m
+      group_wait: 30s
+      receiver: opsgenie
+      repeat_interval: 12h
+      routes:
+      - match:
+          alertname: Watchdog
+        receiver: opsgenie
+    templates:
+    - /etc/alertmanager/config/*.tmpl
+  enabled: true
+  ingress:
+    annotations:
+      cert-manager.io/cluster-issuer: default-cluster-issuer
+    enabled: true
+    hosts:
+    - alert.vault-dev
+    ingressClassName: nginx
+    path: /
+    tls:
+    - hosts:
+      - alert.vault-dev
+      secretName: alerts-general-tls
+coreDns:
+  enabled: true
+grafana:
+  defaultDashboardsEnabled: true
+  enabled: false
+  forceDeployDashboards: true
+  namespaceOverride: grafana
+prometheus:
+  enabled: true
+  ingress:
+    annotations:
+      cert-manager.io/cluster-issuer: default-cluster-issuer
+    enabled: true
+    hosts:
+    - prom.vault-dev
+    ingressClassName: nginx
+    path: /
+    tls:
+    - hosts:
+      - prom.vault-dev
+      secretName: prom-general-tls
+  prometheusSpec:
+    podMetadata:
+      annotations:
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/agent-inject-token: "true"
+        vault.hashicorp.com/agent-pre-populate: "false"
+        vault.hashicorp.com/role: prometheus
+    podMonitorSelectorNilUsesHelmValues: false
+    probeSelectorNilUsesHelmValues: false
+    replicas: 1
+    retention: 90d
+    ruleSelectorNilUsesHelmValues: false
+    serviceMonitorSelectorNilUsesHelmValues: false
+    shards: 1
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+          - ReadWriteOnce
+          resources:
+            requests:
+              storage: 50Gi
+          storageClassName: local-path
+    thanos: {}
+prometheusOperator:
+  enabled: true
+  namespaces: {}

@@ -1,0 +1,45 @@
+prometheus:
+  metricsPort: 7472
+  namespace: metallb
+  podMonitor:
+    enabled: true
+    jobLabel: app.kubernetes.io/name
+    metricRelabelings: []
+    relabelings: []
+  prometheusRule:
+    addressPoolExhausted:
+      enabled: true
+      labels:
+        severity: alert
+    addressPoolUsage:
+      enabled: true
+      thresholds:
+      - labels:
+          severity: warning
+        percent: 75
+      - labels:
+          severity: warning
+        percent: 85
+      - labels:
+          severity: alert
+        percent: 95
+    bgpSessionDown:
+      enabled: false
+      labels:
+        severity: alert
+    configNotLoaded:
+      enabled: true
+      labels:
+        severity: warning
+    enabled: true
+    extraAlerts: []
+    staleConfig:
+      enabled: true
+      labels:
+        severity: warning
+  scrapeAnnotations: true
+  serviceAccount: metallb
+psp:
+  create: true
+rbac:
+  create: true

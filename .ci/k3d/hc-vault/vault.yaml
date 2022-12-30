@@ -1,0 +1,106 @@
+global:
+  enabled: true
+  openshift: false
+  psp:
+    annotations: |
+      seccomp.security.alpha.kubernetes.io/allowedProfileNames: docker/default,runtime/default
+      apparmor.security.beta.kubernetes.io/allowedProfileNames: runtime/default
+      seccomp.security.alpha.kubernetes.io/defaultProfileName:  runtime/default
+      apparmor.security.beta.kubernetes.io/defaultProfileName:  runtime/default
+    enable: false
+  tlsDisable: true
+injector:
+  enabled: true
+  metrics:
+    enabled: true
+server:
+  affinity: ""
+  auditStorage:
+    accessMode: ReadWriteOnce
+    annotations: {}
+    enabled: false
+    mountPath: /vault/audit
+    size: 10Gi
+    storageClass: redundant
+  authDelegator:
+    enabled: false
+  dataStorage:
+    accessMode: ReadWriteOnce
+    annotations: {}
+    enabled: false
+    mountPath: /vault/data
+    size: 10Gi
+    storageClass: redundant
+  enabled: true
+  extraEnvironmentVars:
+    AWS_DEFAULT_REGION: eu-central-1
+    AWS_DYNAMODB_TABLE: vault-dev
+    DYNAMODB_HA_ENABLED: true
+  extraSecretEnvironmentVars:
+  - envName: AWS_SECRET_ACCESS_KEY
+    secretKey: AWS_SECRET_ACCESS_KEY
+    secretName: hc-vault-dynamodb-backend
+  - envName: AWS_ACCESS_KEY_ID
+    secretKey: AWS_ACCESS_KEY_ID
+    secretName: hc-vault-dynamodb-backend
+  ha:
+    config: |
+      ui = true
+
+      listener "tcp" {
+        tls_disable = 1
+        address = "[::]:8200"
+        cluster_address = "[::]:8201"
+      }
+
+      seal "awskms" {
+        region = "eu-central-1"
+        kms_key_id = "alias/default-encryption-key"
+      }
+
+      storage "dynamodb" {
+      }
+
+      service_registration "kubernetes" {}
+
+      telemetry {
+        disable_hostname = true
+        enable_hostname_label = true
+        prometheus_retention_time = "12h"
+      }
+    disruptionBudget:
+      enabled: true
+    enabled: true
+    raft:
+      enabled: false
+    replicas: 3
+  ingress:
+    annotations:
+      cert-manager.io/cluster-issuer: default-cluster-issuer
+    enabled: true
+    hosts:
+    - host: vault.vault-dev
+      paths: []
+    ingressClassName: nginx
+    labels: {}
+    tls:
+    - hosts:
+      - vault.vault-dev
+      secretName: vault-general-tls
+  service:
+    annotations: {}
+    enabled: true
+    port: 8200
+    targetPort: 8200
+    type: LoadBalancer
+  serviceAccount:
+    create: true
+  standalone:
+    enabled: false
+  statefulSet:
+    annotations: {}
+ui:
+  activeVaultPodOnly: true
+  enabled: true
+  publishNotReadyAddresses: false
+  serviceType: LoadBalancer

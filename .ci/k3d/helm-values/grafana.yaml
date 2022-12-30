@@ -1,0 +1,49 @@
+adminPassword: Aa123456
+createConfigmap: true
+defaultDashboardsEnabled: true
+defaultDashboardsTimezone: utc
+grafana.ini:
+  analytics:
+    check_for_updates: true
+  feature_toggles:
+    enable: tempoApmTable
+  grafana_net:
+    url: https://grafana.net
+  log:
+    console:
+      level: debug
+    mode: console
+  paths:
+    data: /var/lib/grafana/
+    logs: /var/log/grafana
+    plugins: /var/lib/grafana/plugins
+    provisioning: /etc/grafana/provisioning
+  plugins:
+    enable_alpha: true
+ingress:
+  annotations:
+    cert-manager.io/cluster-issuer: default-cluster-issuer
+  enabled: true
+  hosts:
+  - grafana.vault.dev
+  ingressClassName: nginx
+  path: /
+  tls:
+  - hosts:
+    - grafana.vault.dev
+    secretName: grafana-general-tls
+plugins:
+- grafana-piechart-panel
+- grafana-googlesheets-datasource
+- grafana-clock-panel
+- grafana-simple-json-datasource
+- grafana-googlesheets-datasource
+replicas: 1
+serviceMonitor:
+  enabled: true
+sidecar:
+  dashboards:
+    enabled: true
+  datasources:
+    enabled: true
+

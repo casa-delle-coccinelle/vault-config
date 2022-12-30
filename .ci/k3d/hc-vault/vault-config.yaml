@@ -1,0 +1,101 @@
+authmethods:
+  kubernetes:
+    prometheus: |-
+      {
+        "namespace": "prometheus",
+        "sa-name": "prometheus-kube-prometheus-prometheus",
+        "acls":
+          [
+            "prometheus-metrics"
+          ]
+      }
+  userpass:
+    dimitko: |-
+      {
+        "namespaces":
+          [
+            "hc-vault"
+          ]
+      }
+    nelinda: |-
+      {
+        "namespaces":
+          [
+            "hc-vault"
+          ]
+      }
+basicAuthSecret: ""
+entities:
+  dimitko: |-
+    {
+      "name": "dimitko",
+      "aliases": [
+        {
+          "name": "dimitko",
+          "authMethod": "userpass"
+        }
+      ]
+    }
+  nelinda: |-
+    {
+      "name": "nelinda",
+      "aliases": [
+        {
+          "name": "nelinda",
+          "authMethod": "userpass"
+        }
+      ]
+    }
+  prometheus: |-
+    {
+      "name": "prometheus",
+      "aliases": [
+        {
+          "name": "prometheus",
+          "authMethod": "userpass"
+        },
+        {
+          "name": "prometheus",
+          "authMethod": "kubernetes"
+        }
+      ],
+      "acls": [
+         "prometheus-metrics"
+      ]
+    }
+env:
+  AWS_DEFAULT_REGION: eu-central-1
+  AWS_DYNAMODB_TABLE: vault-dev
+  INSTANCE: vault-dev
+  VAULT_SA_NAME: hc-vault
+extraSecretEnvironmentVars:
+- name: AWS_SECRET_ACCESS_KEY
+  valueFrom:
+    secretKeyRef:
+      key: AWS_SECRET_ACCESS_KEY
+      name: hc-vault-dynamodb-backend
+- name: AWS_ACCESS_KEY_ID
+  valueFrom:
+    secretKeyRef:
+      key: AWS_ACCESS_KEY_ID
+      name: hc-vault-dynamodb-backend
+grafanaNamespace: grafana
+groups:
+  admins: |-
+    {
+      "name": "admins",
+      "entities": [
+        "dimitko",
+        "nelinda"
+      ],
+      "acls": [
+        "admins"
+      ]
+    }
+image:
+  pullPolicy: Always
+imagePullSecrets:
+- name: awsecr-cred
+vaultPodSelector: app.kubernetes.io/instance=hc-vault,component=server
+vaultSecretEngines:
+- name: kv-v2

@@ -1,0 +1,28 @@
+controller:
+  admissionWebhooks:
+    enabled: true
+    failurePolicy: Ignore
+    port: 6443
+  autoscalling:
+    enabled: true
+    maxReplicas: 4
+    minReplicas: 1
+    targetCPUUtilizationPercentage: 85
+    targetMemoryUtilizationPercentage: 85
+  config: null
+  ingressClassResource:
+    controllerValue: k8s.io/ingress-nginx
+    default: true
+    enabled: true
+    name: nginx
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  service:
+    enableHttp: true
+
