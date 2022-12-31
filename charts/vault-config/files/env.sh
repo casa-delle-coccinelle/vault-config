@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 #
 # env.sh
 # Copyright (C) 2022 user <user@zbook>
@@ -7,11 +7,12 @@
 #
 
 function log_output() {
-    echo "[$(date -Is)] ${@}" >&2
+    echo "[$(date -Is)] ${*}" >&2
 }
 
 function login(){
   # Authenticates with vault root token
+  export VAULT_TOKEN
 
   log_output "Getting credentials from AWS secretsmanager"
   log_output "Getting root token ARN"
@@ -34,7 +35,9 @@ function login(){
       )"
       log_output "Verifiyng vault token"
       vault token lookup | grep ^display_name
-      if [ "${?}" != 0 ]; then
+      e_code="${?}"
+
+      if [ "${e_code}" != 0 ]; then
           log_output "Vault token is invalid"
           exit 2
       fi
@@ -52,7 +55,7 @@ function store_key() {
     aws \
       secretsmanager \
       create-secret \
-      --name hc-vault/${INSTANCE}/${key_type}/key-${id} 2>/dev/null | grep ARN | awk '{print $2}' | sed 's/,$//g' | sed 's/^"//g' | sed 's/"$//g'
+      --name "hc-vault/${INSTANCE}/${key_type}/key-${id}" 2>/dev/null | grep ARN | awk '{print $2}' | sed 's/,$//g' | sed 's/^"//g' | sed 's/"$//g'
   )"
 
 
@@ -64,13 +67,13 @@ function store_key() {
           list-secrets \
           --filters Key=name,Values="hc-vault/${INSTANCE}/${key_type}/key-${id}" | grep ARN | awk '{print $2}' | sed 's/,$//g' | sed 's/^"//g' | sed 's/"$//g' | head -1
       )"
-      if [ "${secret_arn}" == ""]; then
+      if [ "${secret_arn}" == "" ]; then
           log_output "Can create OR reuse secret for key ${id} of type ${key_type}. Exiting"
           exit 3
       fi
   fi
   aws secretsmanager put-secret-value --secret-id "${secret_arn}" --secret-string "${key}"
-  if [ "${?}" != 0 ]; then
+  if ! aws secretsmanager put-secret-value --secret-id "${secret_arn}" --secret-string "${key}"; then
       log_output "Can't store key ${id} of type ${key_type} in AWS SecretsManager"
       exit 4
   fi
@@ -82,7 +85,7 @@ function get_vault_init_status(){
 
   log_output "Checking if vault instance has booted"
   while [ "${resp_code}" == "000" ]; do
-    resp_code="$(curl -L -s ${VAULT_ADDR} -o /dev/null -w "%{http_code}")"
+    resp_code="$(curl -L -s "${VAULT_ADDR}" -o /dev/null -w "%{http_code}")"
     sleep 1
   done
 
@@ -93,22 +96,45 @@ function get_vault_init_status(){
   done
 
   log_output "Vault init status: ${vault_init_status}"
-  echo ${vault_init_status}
+  echo "${vault_init_status}"
 }
+
+function ipvalid() {
+    # Set up local variables
+    local ip=${1:-NO_IP_PROVIDED}
+    local IFS=.; local -a a=("${ip}")
+    # Start with a regex format test
+    [[ $ip =~ ^[0-9]+(\.[0-9]+){3}$ ]] || return 1
+    # Test values of quads
+    local quad
+    for quad in {0..3}; do
+        [[ "${a[$quad]}" -gt 255 ]] && return 1
+    done
+    return 0
+}
+
 
 function select_init_pod_address(){
     log_output "Selecting vault pod for initialization"
-    vault_first_pod="$(
-        kubectl \
-            --namespace ${VAULT_NAMESPACE} \
-            get pods \
-            -l "${VAULT_POD_SELECTOR}" \
-            --template '{{ range .items }}{{ .status.podIP }}{{ "\n" }}{{ end }}' | \
-        sort -u | \
-        head -n 1
-    )"
-    VAULT_ADDR="http://${vault_first_pod}:8200"
-    VAULT_POD_ADDRESS="${vault_first_pod}"
+    export VAULT_ADDR
+    export VAULT_POD_ADDRESS
+
+    while [ "${VAULT_ADDR}" == "" ]; do
+        vault_first_pod="$(
+            kubectl \
+                --namespace "${VAULT_NAMESPACE}" \
+                get pods \
+                -l "${VAULT_POD_SELECTOR}" \
+                --template '{{ range .items }}{{ .status.podIP }}{{ "\n" }}{{ end }}' | \
+            sort -u | \
+            head -n 1
+        )"
+        if ipvalid "${vault_first_pod}"; then
+            VAULT_ADDR="http://${vault_first_pod}:8200"
+            VAULT_POD_ADDRESS="${vault_first_pod}"
+        fi
+        sleep 1
+    done
     log_output "Vault address: ${VAULT_ADDR}"
 }
 
