@@ -1,6 +1,7 @@
-#! /bin/sh
+#! /bin/bash
 #Based on https://github.com/hashicorp/best-practices/blob/master/packer/config/vault/scripts/setup_vault.sh
 
+# shellcheck source=/dev/null
 source "$(dirname -- "${BASH_SOURCE[0]}")/env.sh"
 echo "## INIT SCRIPT"
 
@@ -18,21 +19,21 @@ export ROOT_TOKEN
 function init_vault(){
     log_output "Initializing Vault"
 
-    vault operator init -recovery-shares ${RECOVERY_SHARES} -recovery-threshold ${RECOVERY_TRESHOLD} | tee "${RECOVERY_KEYS_PATH}" > /dev/null
+    vault operator init -recovery-shares "${RECOVERY_SHARES}" -recovery-threshold "${RECOVERY_TRESHOLD}" | tee "${RECOVERY_KEYS_PATH}" > /dev/null
 }
 
 function parse_recovery_keys(){
     counter=1
     
-    recovery_keys="$(cat "${RECOVERY_KEYS_PATH}" | grep '^Recovery Key' | awk '{print $4}' )"
+    recovery_keys="$( grep '^Recovery Key' "${RECOVERY_KEYS_PATH}" | awk '{print $4}' )"
     for key in ${recovery_keys} ; do
-      store_key ${key} recovery-key ${counter}
+      store_key "${key}" recovery-key "${counter}"
       counter=$((counter + 1))
     done
 }
 
 function parse_root_token(){
-    ROOT_TOKEN=$(cat "${RECOVERY_KEYS_PATH}" | grep '^Initial Root' | awk '{print $4}')
+    ROOT_TOKEN=$( grep '^Initial Root' "${RECOVERY_KEYS_PATH}" | awk '{print $4}')
     store_key "${ROOT_TOKEN}" root-token 1
 }
 
