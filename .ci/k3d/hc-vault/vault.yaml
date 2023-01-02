@@ -79,13 +79,13 @@ server:
       cert-manager.io/cluster-issuer: default-cluster-issuer
     enabled: true
     hosts:
-    - host: vault.vault-dev
+    - host: vault.vault.dev
       paths: []
     ingressClassName: nginx
     labels: {}
     tls:
     - hosts:
-      - vault.vault-dev
+      - vault.vault.dev
       secretName: vault-general-tls
   service:
     annotations: {}

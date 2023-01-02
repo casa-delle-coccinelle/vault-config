@@ -27,13 +27,13 @@ alertmanager:
       cert-manager.io/cluster-issuer: default-cluster-issuer
     enabled: true
     hosts:
-    - alert.vault-dev
+    - alert.vault.dev
     ingressClassName: nginx
     path: /
     tls:
     - hosts:
-      - alert.vault-dev
-      secretName: alerts-general-tls
+      - alert.vault.dev
+      secretName: prom-general-tls
 coreDns:
   enabled: true
 grafana:
@@ -48,12 +48,12 @@ prometheus:
       cert-manager.io/cluster-issuer: default-cluster-issuer
     enabled: true
     hosts:
-    - prom.vault-dev
+    - prom.vault.dev
     ingressClassName: nginx
     path: /
     tls:
     - hosts:
-      - prom.vault-dev
+      - prom.vault.dev
       secretName: prom-general-tls
   prometheusSpec:
     podMetadata:
