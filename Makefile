@@ -42,7 +42,7 @@ fix-traffic:
 	sudo sysctl net.ipv4.ip_unprivileged_port_start=79
 	kubectl -n ingress-nginx port-forward svc/ingress-nginx-controller 443:443 &
 	kubectl -n ingress-nginx port-forward svc/ingress-nginx-controller 80:80 &
-	sudo bash -c "echo '127.0.0.1 grafana.vault.dev vault.vault.dev alert.vault-dev alert.vault-dev' >> /etc/hosts"
+	grep -q grafana.vault.dev /etc/hosts || sudo bash -c "echo '127.0.0.1 grafana.vault.dev vault.vault.dev alert.vault.dev prom.vault.dev' >> /etc/hosts"
 
 
 # vim:ft=make
