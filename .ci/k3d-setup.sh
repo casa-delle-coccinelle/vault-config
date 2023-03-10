@@ -11,6 +11,7 @@ if [ ${#} -lt 1 ]; then
     deploy_metallb=1
     deploy_grafana=1
     deploy_nginx=1
+    deploy_cert=1
 else
     case "${1}" in
         prometheus )
@@ -24,6 +25,9 @@ else
             ;;
         nginx )
             deploy_nginx=1
+            ;;
+        cert-manager )
+            deploy_cert=1
             ;;
     esac
 fi
@@ -77,6 +81,21 @@ while [ ${deploy_nginx} -ne 0 ]; do
     helm repo update
     if helm upgrade -n ingress-nginx --install ingress-nginx ingress-nginx/ingress-nginx -f .ci/k3d/helm-values/ingress-nginx.yaml; then
         deploy_nginx=0
+    fi
+    sleep 1
+done
+
+while [ ${deploy_cert} -ne 0 ]; do
+    deploy_cert=0
+    helm repo add jetstack https://charts.jetstack.io
+    helm repo update
+    kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.crds.yaml
+    if ! helm upgrade -n cert-manager --install cert-manager jetstack/cert-manager --create-namespace; then
+        deploy_cert=$((deploy_cert+1))
+    fi
+    sleep 1
+    if ! kubectl apply -f .ci/k3d/helm-values/cert-manager-issuer.yaml; then
+        deploy_cert=$((deploy_cert+1))
     fi
     sleep 1
 done

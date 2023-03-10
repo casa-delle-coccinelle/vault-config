@@ -102,7 +102,7 @@ function get_vault_init_status(){
 function ipvalid() {
     # Set up local variables
     local ip=${1:-NO_IP_PROVIDED}
-    local IFS=.; local -a a=("${ip}")
+    local IFS=.; local -a a=(${ip})
     # Start with a regex format test
     [[ $ip =~ ^[0-9]+(\.[0-9]+){3}$ ]] || return 1
     # Test values of quads
