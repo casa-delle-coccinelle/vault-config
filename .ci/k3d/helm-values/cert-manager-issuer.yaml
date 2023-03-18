@@ -1,0 +1,39 @@
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned-issuer
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: default-cluster-issuer-ca
+  namespace: cert-manager
+spec:
+  isCA: true
+  commonName: default-cluster-issuer
+  duration: 8760h
+  renewBefore: 8040h
+  secretName: default-cluster-issuer-ca
+  subject:
+    organizations:
+      - casa-delle-coccinelle
+  privateKey:
+    algorithm: RSA
+    size: 4096
+    encoding: PKCS1
+  issuerRef:
+    name: selfsigned-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: default-cluster-issuer
+spec:
+  ca:
+    secretName: default-cluster-issuer-ca

@@ -1,4 +1,7 @@
+---
 controller:
+  config:
+    hsts: false
   admissionWebhooks:
     enabled: true
     failurePolicy: Ignore
@@ -9,7 +12,6 @@ controller:
     minReplicas: 1
     targetCPUUtilizationPercentage: 85
     targetMemoryUtilizationPercentage: 85
-  config: null
   ingressClassResource:
     controllerValue: k8s.io/ingress-nginx
     default: true
@@ -26,5 +28,5 @@ controller:
   service:
     enableHttp: true
     ports:
-      http: 8080
       https: 8443
+      http: 8080

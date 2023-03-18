@@ -1,3 +1,4 @@
+---
 adminPassword: Aa123456
 createConfigmap: true
 defaultDashboardsEnabled: true
@@ -20,24 +21,26 @@ grafana.ini:
     provisioning: /etc/grafana/provisioning
   plugins:
     enable_alpha: true
+  security:
+    strict_transport_security: false
 ingress:
   annotations:
     cert-manager.io/cluster-issuer: default-cluster-issuer
   enabled: true
   hosts:
-  - grafana.vault.dev
+    - grafana.vault.dev
   ingressClassName: nginx
   path: /
   tls:
-  - hosts:
-    - grafana.vault.dev
-    secretName: grafana-general-tls
+    - hosts:
+        - grafana.vault.dev
+      secretName: grafana-general-tls
 plugins:
-- grafana-piechart-panel
-- grafana-googlesheets-datasource
-- grafana-clock-panel
-- grafana-simple-json-datasource
-- grafana-googlesheets-datasource
+  - grafana-piechart-panel
+  - grafana-googlesheets-datasource
+  - grafana-clock-panel
+  - grafana-simple-json-datasource
+  - grafana-googlesheets-datasource
 replicas: 1
 serviceMonitor:
   enabled: true
@@ -46,4 +49,3 @@ sidecar:
     enabled: true
   datasources:
     enabled: true
-

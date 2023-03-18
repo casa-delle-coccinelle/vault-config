@@ -18,8 +18,15 @@ generate-aws-secret:
 vault:
 	bash ./.ci/vault.sh
 
+.PHONY: get-ca
+get-ca:
+	kubectl -n cert-manager get secret default-cluster-issuer-ca -o yaml | yq '.data."ca.crt"' | base64 --decode >> .ci/ca.pem
+	kubectl -n cert-manager get secret default-cluster-issuer-ca -o yaml | yq '.data."tls.crt"' | base64 --decode >> .ci/ca.pem
+	kubectl -n cert-manager get secret default-cluster-issuer-ca -o yaml | yq '.data."tls.key"' | base64 --decode >> .ci/ca.pem
+	echo "CA in .ci/ca.pem"
+
 .PHONY: deploy-all
-deploy-all: clear-aws generate-aws-secret k3d-setup vault
+deploy-all: clear-aws generate-aws-secret k3d-setup vault get-ca
 
 .PHONY: tear-down
 tear-down: clear-aws
