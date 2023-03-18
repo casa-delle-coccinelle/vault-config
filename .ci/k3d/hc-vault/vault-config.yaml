@@ -1,3 +1,4 @@
+---
 authmethods:
   kubernetes:
     prometheus: |-
@@ -69,16 +70,16 @@ env:
   INSTANCE: vault-dev
   VAULT_SA_NAME: hc-vault
 extraSecretEnvironmentVars:
-- name: AWS_SECRET_ACCESS_KEY
-  valueFrom:
-    secretKeyRef:
-      key: AWS_SECRET_ACCESS_KEY
-      name: hc-vault-dynamodb-backend
-- name: AWS_ACCESS_KEY_ID
-  valueFrom:
-    secretKeyRef:
-      key: AWS_ACCESS_KEY_ID
-      name: hc-vault-dynamodb-backend
+  - name: AWS_SECRET_ACCESS_KEY
+    valueFrom:
+      secretKeyRef:
+        key: AWS_SECRET_ACCESS_KEY
+        name: hc-vault-dynamodb-backend
+  - name: AWS_ACCESS_KEY_ID
+    valueFrom:
+      secretKeyRef:
+        key: AWS_ACCESS_KEY_ID
+        name: hc-vault-dynamodb-backend
 grafanaNamespace: grafana
 groups:
   admins: |-
@@ -95,7 +96,7 @@ groups:
 image:
   pullPolicy: Always
 imagePullSecrets:
-- name: awsecr-cred
+  - name: awsecr-cred
 vaultPodSelector: app.kubernetes.io/instance=hc-vault,component=server
 vaultSecretEngines:
-- name: kv-v2
+  - name: kv-v2

@@ -1,3 +1,4 @@
+---
 global:
   enabled: true
   openshift: false
@@ -37,12 +38,12 @@ server:
     AWS_DYNAMODB_TABLE: vault-dev
     DYNAMODB_HA_ENABLED: true
   extraSecretEnvironmentVars:
-  - envName: AWS_SECRET_ACCESS_KEY
-    secretKey: AWS_SECRET_ACCESS_KEY
-    secretName: hc-vault-dynamodb-backend
-  - envName: AWS_ACCESS_KEY_ID
-    secretKey: AWS_ACCESS_KEY_ID
-    secretName: hc-vault-dynamodb-backend
+    - envName: AWS_SECRET_ACCESS_KEY
+      secretKey: AWS_SECRET_ACCESS_KEY
+      secretName: hc-vault-dynamodb-backend
+    - envName: AWS_ACCESS_KEY_ID
+      secretKey: AWS_ACCESS_KEY_ID
+      secretName: hc-vault-dynamodb-backend
   ha:
     config: |
       ui = true
@@ -79,14 +80,14 @@ server:
       cert-manager.io/cluster-issuer: default-cluster-issuer
     enabled: true
     hosts:
-    - host: vault.vault.dev
-      paths: []
+      - host: vault.vault.dev
+        paths: []
     ingressClassName: nginx
     labels: {}
     tls:
-    - hosts:
-      - vault.vault.dev
-      secretName: vault-general-tls
+      - hosts:
+          - vault.vault.dev
+        secretName: vault-general-tls
   service:
     annotations: {}
     enabled: true

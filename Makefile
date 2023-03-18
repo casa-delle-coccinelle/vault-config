@@ -35,13 +35,12 @@ reset: tear-down deploy-all
 
 .PHONY: get-root-token
 get-root-token:
-	aws secretsmanager get-secret-value --secret-id hc-vault/hc-vault-table-test-cluster-nfs/root-token/key-1
+	aws secretsmanager get-secret-value --secret-id hc-vault/vault-dev/root-token/key-1
 
 .PHONY: fix-traffic
 fix-traffic:
-	sudo sysctl net.ipv4.ip_unprivileged_port_start=79
-	kubectl -n ingress-nginx port-forward svc/ingress-nginx-controller 443:443 &
-	kubectl -n ingress-nginx port-forward svc/ingress-nginx-controller 80:80 &
+	kubectl -n ingress-nginx port-forward svc/ingress-nginx-controller 8443:8443 &
+	kubectl -n ingress-nginx port-forward svc/ingress-nginx-controller 8080:8080 &
 	grep -q grafana.vault.dev /etc/hosts || sudo bash -c "echo '127.0.0.1 grafana.vault.dev vault.vault.dev alert.vault.dev prom.vault.dev' >> /etc/hosts"
 
 
