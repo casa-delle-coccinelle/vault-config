@@ -13,13 +13,18 @@ export VAULT_SECRET_ENGINES_PATH="/SecretEngines"
 export VAULT_TOKEN=
 
 function set_secret_engine(){
-    secret_engine="${1}"
-    secret_engine_params="$(cat "${VAULT_SECRET_ENGINES_PATH}/${1}")"
+    secret_engine="$(basename "${1}")"
+    secret_engine_params="$(cat "${1}")"
     
-    if [ "$(vault secrets list "^${secret_engine}/")" == "" ]; then
-        vault secrets enable "${secret_engine_params}" "${secret_engine}"
+    if [ "$(vault secrets list | grep "^${secret_engine}/")" == "" ]; then
+        # If we don't set parameters we want empty parameter placeholder and not empty string parameter
+        # shellcheck disable=SC2086
+        vault secrets enable ${secret_engine_params} "${secret_engine}"
     fi
-    vault secrets tune "${secret_engine_params}" "${secret_engine}"
+    if [ "${secret_engine_params}" == "" ]; then
+        # shellcheck disable=SC2086
+        vault secrets tune ${secret_engine_params} "${secret_engine}"
+    fi
 }
 
 function set_secret_engines(){

@@ -74,6 +74,7 @@ while [ ${deploy_grafana} -ne 0 ]; do
         deploy_grafana=0
     fi
     sleep 1
+    kubectl apply -f .ci/k3d/manifests/10-grafana-datasource.yaml
 done
 
 while [ ${deploy_nginx} -ne 0 ]; do

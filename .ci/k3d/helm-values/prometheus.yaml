@@ -1,39 +1,40 @@
+---
 alertmanager:
   config:
     global:
       opsgenie_api_key: nokey
     receivers:
-    - name: opsgenie
-      opsgenie_configs:
-      - responders:
-        - name: test-cluster-team
-          type: team
+      - name: opsgenie
+        opsgenie_configs:
+          - responders:
+              - name: test-cluster-team
+                type: team
     route:
       group_by:
-      - job
+        - job
       group_interval: 5m
       group_wait: 30s
       receiver: opsgenie
       repeat_interval: 12h
       routes:
-      - match:
-          alertname: Watchdog
-        receiver: opsgenie
+        - match:
+            alertname: Watchdog
+          receiver: opsgenie
     templates:
-    - /etc/alertmanager/config/*.tmpl
+      - /etc/alertmanager/config/*.tmpl
   enabled: true
   ingress:
     annotations:
       cert-manager.io/cluster-issuer: default-cluster-issuer
     enabled: true
     hosts:
-    - alert.vault.dev
+      - alert.vault.dev
     ingressClassName: nginx
     path: /
     tls:
-    - hosts:
-      - alert.vault.dev
-      secretName: prom-general-tls
+      - hosts:
+          - alert.vault.dev
+        secretName: prom-general-tls
 coreDns:
   enabled: true
 grafana:
@@ -48,13 +49,13 @@ prometheus:
       cert-manager.io/cluster-issuer: default-cluster-issuer
     enabled: true
     hosts:
-    - prom.vault.dev
+      - prom.vault.dev
     ingressClassName: nginx
     path: /
     tls:
-    - hosts:
-      - prom.vault.dev
-      secretName: prom-general-tls
+      - hosts:
+          - prom.vault.dev
+        secretName: prom-general-tls
   prometheusSpec:
     podMetadata:
       annotations:
@@ -73,7 +74,7 @@ prometheus:
       volumeClaimTemplate:
         spec:
           accessModes:
-          - ReadWriteOnce
+            - ReadWriteOnce
           resources:
             requests:
               storage: 50Gi

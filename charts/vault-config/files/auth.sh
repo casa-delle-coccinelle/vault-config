@@ -27,7 +27,7 @@ function generate_secret(){
       create \
       secret \
       generic \
-      "${INSTANCE}-vault-user" \
+      "${INSTANCE}-${user}-vault-user" \
       --from-literal=USERNAME="${user}" \
       --from-literal=PASSWORD="${vault_user_pass}" \
       --dry-run=client -o yaml | kubectl --namespace="${namespace}" apply -f -
