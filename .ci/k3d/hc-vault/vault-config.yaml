@@ -25,7 +25,6 @@ authmethods:
             "hc-vault"
           ]
       }
-basicAuthSecret: ""
 entities:
   dimitko: |-
     {
